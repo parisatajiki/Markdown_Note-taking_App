@@ -43,3 +43,25 @@ class RenderNoteHTML(APIView):
 
 
 
+class CheckGrammar(APIView):
+    def post(self, request,pk):
+        note = Note.objects.get(id=pk)
+        if note.file:
+            uploaded_file = note.file
+            text = uploaded_file.read().decode('utf-8')
+        else:
+            text = request.data.get('content', '')
+
+        tool = language_tool_python.LanguageToolPublicAPI('en')
+        matches = tool.check(text)
+
+        errors = []
+        for match in matches:
+            errors.append({
+                "message": match.message,
+                "offset": match.offset,
+                "length": match.errorLength,
+                "replacements": match.replacements
+            })
+
+        return Response({"grammar_errors": errors})
